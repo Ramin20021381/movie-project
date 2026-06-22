@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Movie Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  margin: 0;
+  font-family: "Inter", sans-serif;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: white;
+}
+
+header {
+  padding: 20px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 600;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+}
+
+button {
+  margin: 20px auto;
+  display: block;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #38bdf8;
+  color: black;
+  font-weight: bold;
+}
+
+.container {
+  width: 90%;
+  max-width: 1000px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 15px;
+  padding: 15px;
+  transition: 0.3s;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card h3 {
+  margin: 0;
+  color: #38bdf8;
+}
+
+.card p {
+  color: #cbd5e1;
+  font-size: 14px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 10px;
+  background: #22c55e;
+  font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<header>🎬 Movie Dashboard</header>
+
+<button onclick="loadMovies()">🔄 Reload Movies</button>
+
+<div class="container" id="movies"></div>
+
+<script>
+
+async function loadMovies() {
+  try {
+    const res = await fetch("http://localhost:3000/movies");
+    const data = await res.json();
+
+    const container = document.getElementById("movies");
+    container.innerHTML = "";
+
+    data.forEach(movie => {
+      container.innerHTML += `
+        <div class="card">
+          <h3>${movie.title}</h3>
+          <p>📅 Year: ${movie.year}</p>
+          <span class="badge">${movie.genre || "No Genre"}</span>
+        </div>
+      `;
+    });
+
+  } catch (err) {
+    document.getElementById("movies").innerHTML =
+      "<p style='color:red'>❌ Server not running</p>";
+  }
+}
+
+// auto load on start
+loadMovies();
+
+</script>
+
+</body>
+</html>
