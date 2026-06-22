@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Movie Management System:
 
 ## Description
@@ -72,3 +73,7 @@ genres(id, name)
 
 ##  Author
 Student Project – ITWS Course
+=======
+# movie-project
+
+>>>>>>> b37ce072dfb61656109409fcf7a00408e533b58a

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Movie Dashboard</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
@@ -23,9 +24,24 @@ header {
   backdrop-filter: blur(10px);
 }
 
-button {
+.panel {
+  width: 90%;
+  max-width: 1000px;
   margin: 20px auto;
-  display: block;
+  background: rgba(255,255,255,0.05);
+  padding: 20px;
+  border-radius: 15px;
+}
+
+input {
+  padding: 10px;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+}
+
+button {
+  margin: 5px;
   padding: 10px 20px;
   border: none;
   border-radius: 10px;
@@ -38,7 +54,7 @@ button {
 .container {
   width: 90%;
   max-width: 1000px;
-  margin: auto;
+  margin: 20px auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 20px;
@@ -46,11 +62,9 @@ button {
 
 .card {
   background: rgba(255,255,255,0.08);
-  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 15px;
   padding: 15px;
   transition: 0.3s;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
 }
 
 .card:hover {
@@ -62,17 +76,17 @@ button {
   color: #38bdf8;
 }
 
-.card p {
-  color: #cbd5e1;
-  font-size: 14px;
-}
-
 .badge {
   display: inline-block;
   padding: 4px 10px;
   border-radius: 10px;
   background: #22c55e;
   font-size: 12px;
+}
+
+.section-title {
+  text-align: center;
+  margin-top: 40px;
 }
 </style>
 </head>
@@ -81,38 +95,194 @@ button {
 
 <header>🎬 Movie Dashboard</header>
 
-<button onclick="loadMovies()">🔄 Reload Movies</button>
+<div class="panel">
 
+<h2>Add Movie</h2>
+<input id="title" placeholder="Movie Title">
+<input id="year" type="number" placeholder="Year">
+<input id="genreId" type="number" placeholder="Genre ID">
+<button onclick="addMovie()">Add Movie</button>
+
+<hr>
+
+<h2>Search Movie</h2>
+<input id="searchTitle" placeholder="Movie Name">
+<button onclick="searchMovie()">Search</button>
+<button onclick="loadMovies()">Show All</button>
+
+<hr>
+
+<h2>Add Genre</h2>
+<input id="genreName" placeholder="Genre Name">
+<button onclick="addGenre()">Add Genre</button>
+
+<hr>
+
+<button onclick="loadMovies()">🔄 Reload Movies</button>
+<button onclick="loadGenres()">🔄 Reload Genres</button>
+
+</div>
+
+<h2 class="section-title">Movies</h2>
 <div class="container" id="movies"></div>
+
+<h2 class="section-title">Genres</h2>
+<div class="container" id="genres"></div>
 
 <script>
 
-async function loadMovies() {
-  try {
-    const res = await fetch("http://localhost:3000/movies");
-    const data = await res.json();
+// ======================
+// MOVIES
+// ======================
 
-    const container = document.getElementById("movies");
-    container.innerHTML = "";
+function renderMovies(data){
+  const container = document.getElementById("movies");
+  container.innerHTML = "";
 
-    data.forEach(movie => {
-      container.innerHTML += `
-        <div class="card">
-          <h3>${movie.title}</h3>
-          <p>📅 Year: ${movie.year}</p>
-          <span class="badge">${movie.genre || "No Genre"}</span>
-        </div>
-      `;
-    });
-
-  } catch (err) {
-    document.getElementById("movies").innerHTML =
-      "<p style='color:red'>❌ Server not running</p>";
-  }
+  data.forEach(movie => {
+    container.innerHTML += `
+      <div class="card">
+        <h3>${movie.title}</h3>
+        <p>📅 Year: ${movie.year}</p>
+        <span class="badge">
+          ${movie.name || movie.genre || "No Genre"}
+        </span>
+        <br><br>
+        <button onclick="deleteMovie(${movie.id})">Delete</button>
+        <button onclick="editMovie(${movie.id}, '${movie.title}', ${movie.year})">Edit</button>
+      </div>
+    `;
+  });
 }
 
-// auto load on start
+async function loadMovies(){
+  const res = await fetch("http://localhost:3000/movies");
+  const data = await res.json();
+  renderMovies(data);
+}
+
+async function addMovie(){
+  const title = document.getElementById("title").value;
+  const year = document.getElementById("year").value;
+  const genre_id = document.getElementById("genreId").value;
+
+  if(!title || !year || !genre_id){
+    alert("Fill all fields");
+    return;
+  }
+
+  await fetch("http://localhost:3000/movies", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ title, year, genre_id })
+  });
+
+  document.getElementById("title").value = "";
+  document.getElementById("year").value = "";
+  document.getElementById("genreId").value = "";
+
+  loadMovies();
+}
+
+async function editMovie(id, oldTitle, oldYear){
+  const title = prompt("New title:", oldTitle);
+  if(!title) return;
+
+  const year = prompt("New year:", oldYear);
+  const genre_id = prompt("Genre ID:");
+
+  if(!year || !genre_id) return;
+
+  await fetch(`http://localhost:3000/movies/${id}`, {
+    method: "PUT",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ title, year, genre_id })
+  });
+
+  loadMovies();
+}
+
+async function deleteMovie(id){
+  if(!confirm("Delete movie?")) return;
+
+  await fetch(`http://localhost:3000/movies/${id}`, {
+    method: "DELETE"
+  });
+
+  loadMovies();
+}
+
+async function searchMovie(){
+  const title = document.getElementById("searchTitle").value;
+
+  if(!title){
+    loadMovies();
+    return;
+  }
+
+  const res = await fetch(`http://localhost:3000/movies/search/${title}`);
+  const data = await res.json();
+  renderMovies(data);
+}
+
+// ======================
+// GENRES
+// ======================
+
+function renderGenres(data){
+  const container = document.getElementById("genres");
+  container.innerHTML = "";
+
+  data.forEach(genre => {
+    container.innerHTML += `
+      <div class="card">
+        <h3>${genre.name}</h3>
+        <button onclick="deleteGenre(${genre.id})">Delete</button>
+      </div>
+    `;
+  });
+}
+
+async function loadGenres(){
+  const res = await fetch("http://localhost:3000/genres");
+  const data = await res.json();
+  renderGenres(data);
+}
+
+async function addGenre(){
+  const name = document.getElementById("genreName").value;
+
+  if(!name){
+    alert("Enter genre name");
+    return;
+  }
+
+  await fetch("http://localhost:3000/genres", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ name })
+  });
+
+  document.getElementById("genreName").value = "";
+  loadGenres();
+}
+
+async function deleteGenre(id){
+  if(!confirm("Delete genre?")) return;
+
+  await fetch(`http://localhost:3000/genres/${id}`, {
+    method: "DELETE"
+  });
+
+  loadGenres();
+}
+
+// ======================
+// INIT
+// ======================
+
 loadMovies();
+loadGenres();
 
 </script>
 
